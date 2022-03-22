@@ -1,0 +1,65 @@
+# 配置文档 https://docs.docker.com/compose/compose-file/compose-file-v3/
+version: "3"
+services:
+  mysql:
+    image: mysql:5.7
+    container_name: minei.net-mysql
+    networks:
+      - net
+    privileged: true
+    volumes:
+      - /data/fuzong.wang/mysql/data:/var/lib/mysql
+    ports:
+      - 3306:3306
+  nodejs:
+    image: node:10.10.0
+    container_name: minei.net-node.ssr
+    networks:
+      - net
+    stdin_open: true
+    tty: true
+    volumes:
+      - /var/www/mimei.net.cn/ssr:/home/node
+    # 启动成功以后，进入 container 里，docker container exec -it [container id] /bin/bash
+    # 启动 node 服务 cd /home/node && node ./server.js
+  php:
+    image: php7.2-with-extension:0.0.1
+    container_name: php.host
+    networks:
+      - net
+    volumes:
+      - /var/www:/usr/share/nginx/html
+    ports:
+      - 9000:9000
+  nginx:
+    image: nginx:1.16
+    container_name: mimei.net-nginx
+    networks:
+      - net
+    # external_links:
+    #   - php.host:php-process
+    #   - minei.net-node.ssr:node-server
+    volumes:
+      - /var/www:/usr/share/nginx/html
+      - /opt/webservice/nginx/log:/var/log/nginx
+      - /opt/webservice/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - /opt/webservice/nginx/conf.d:/etc/nginx/conf.d
+      - /opt/webservice/nginx/cert:/etc/nginx/cert
+    ports:
+      - 80:80
+      - 443:443
+  jenkins:
+    image: jenkins/jenkins:latest
+    container_name: jenkins
+    networks:
+      - net
+    user: root
+    volumes:
+      - /data/jenkins_home:/var/jenkins_home
+      - /var/www:/var/www
+    ports:
+      - 8081:8080
+      - 50000:50000
+networks:
+  net:
+    driver: bridge
